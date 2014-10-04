@@ -1,0 +1,31 @@
+<resources>
+
+    <string name="app_name">IPTV Player</string>
+    <string name="default_catalog">All</string>
+
+    <string name="tips_loading">Loading…</string>
+    <string name="tips_prev_page">Go to the previous page.</string>
+    <string name="tips_next_page">Go to the next page.</string>
+    <string name="tips_logo">The logo for this channel.</string>
+    <string name="tips_browse_file">Browse other playlist.</string>
+    <string name="tips_reset">Reset to default playlist.</string>
+
+    <string name="error">Error</string>
+    <string name="error_invalid_url">Invalid URL.</string>
+    <string name="error_cannot_play">This video cannot play(Code: %1$d).</string>
+    <string name="error_empty_playlist">No channels found.</string>
+    <string name="error_empty_playlist2">No channels found. Load other playlist file?</string>
+
+    <string name="btn_ok">OK</string>
+    <string name="btn_cancel">Cancel</string>
+    <string name="btn_retry">Retry</string>
+    <string name="btn_ignore">Ignore</string>
+    <string name="btn_abort">Abort</string>
+    <string name="btn_yes">Yes</string>
+    <string name="btn_no">No</string>
+    <string name="btn_browse">Load</string>
+    <string name="btn_reset">Reset</string>
+    
+    <string name="title_choose_group">Choose a group</string>
+
+</resources>
