@@ -190,6 +190,7 @@ public class Player extends BaseActivity {
 			public void execute() {
 				M3UFile m3ufile = M3UToolSet.load(path);
 				if (DEBUGON) {
+					Log.d(TAG, "Load [" + path + "]");
 					Log.d(TAG, m3ufile.toString());
 				}
 				if (m3ufile.getItems().isEmpty()) {
@@ -316,11 +317,23 @@ public class Player extends BaseActivity {
 	}
 
 	private void play(final M3UItem item) {
-		mVideoView.stopPlayback();
 		if (item.getStreamURL() != null) {
-			Uri uri = Uri.parse(item.getStreamURL());
-			mVideoView.setVideoURI(uri);
-			mVideoView.start();
+			Interlude loading = new Interlude(this, new Task(false) {
+				
+				@Override
+				public void execute() {
+					mVideoView.stopPlayback();
+				}
+			});
+			loading.setCallback(new Callback() {
+				
+				@Override
+				public void onCompleted() {
+					mVideoView.setVideoURI(Uri.parse(item.getStreamURL()));
+					mVideoView.start();
+				}
+			});
+			loading.excute();
 		} else {
 			new MessageBox(this, getString(R.string.error),
 					getString(R.string.error_invalid_url), MessageBox.MB_OK);
