@@ -26,6 +26,9 @@ public class M3UParser {
 	private static final String ATTR_DURATION = "duration";
 	private static final String ATTR_LOGO = "logo";
 	private static final String ATTR_GROUP_TITLE = "group-title";
+	private static final String ATTR_TVG_PREFIX = "tvg-";
+	private static final String ATTR_TVG_SUFFIX = "-tvg";
+	private static final String INVALID_STREAM_URL = "http://0.0.0.0:1234";
 
 	private static M3UParser mInstance = null;
 	private M3UHandler mHandler = null;
@@ -109,41 +112,59 @@ public class M3UParser {
 
 	private void flush(M3UHandler handler) {
 		if (mTempItem != null) {
-			handler.onReadEXTINF(mTempItem);
+			// The invalid item must be skipped.
+			if (mTempItem.getStreamURL() != null) {
+				handler.onReadEXTINF(mTempItem);
+			}
 			mTempItem = null;
 		}
 	}
 
 	private void updateURL(String url) {
-		if (mTempItem != null) {
-			mTempItem.setStreamURL(url);
+		if (mTempItem != null && !INVALID_STREAM_URL.equals(url)) {
+			mTempItem.setStreamURL(url.trim().split("\\s*")[0]);
 		}
 	}
 
+	private void putAttr(Map<String, String> map, String key, String value) {
+		map.put(key, value);
+	}
+
+	private String getAttr(Map<String, String> map, String key) {
+		String value = map.get(key);
+		if (value == null) {
+			value = map.get(ATTR_TVG_PREFIX + key);
+			if (value == null) {
+				value = map.get(key + ATTR_TVG_SUFFIX);
+			}
+		}
+		return value;
+	}
+
 	private M3UHead parseHead(String words) {
-		Map<String, String> attr = parseAttribute(words);
+		Map<String, String> attr = parseAttributes(words);
 		M3UHead header = new M3UHead();
-		header.setName(attr.get(ATTR_NAME));
-		header.setType(attr.get(ATTR_TYPE));
-		header.setDLNAExtras(attr.get(ATTR_DLNA_EXTRAS));
-		header.setPlugin(attr.get(ATTR_PLUGIN));
+		header.setName(getAttr(attr, ATTR_NAME));
+		header.setType(getAttr(attr, ATTR_TYPE));
+		header.setDLNAExtras(getAttr(attr, ATTR_DLNA_EXTRAS));
+		header.setPlugin(getAttr(attr, ATTR_PLUGIN));
 		return header;
 	}
 
 	private M3UItem parseItem(String words) {
-		Map<String, String> attr = parseAttribute(words);
+		Map<String, String> attr = parseAttributes(words);
 		M3UItem item = new M3UItem();
-		item.setChannelName(attr.get(ATTR_CHANNEL_NAME));
-		item.setDuration(convert2int(attr.get(ATTR_DURATION)));
-		item.setLogoURL(attr.get(ATTR_LOGO));
-		item.setGroupTitle(attr.get(ATTR_GROUP_TITLE));
-		item.setType(attr.get(ATTR_TYPE));
-		item.setDLNAExtras(attr.get(ATTR_DLNA_EXTRAS));
-		item.setPlugin(attr.get(ATTR_PLUGIN));
+		item.setChannelName(getAttr(attr, ATTR_CHANNEL_NAME));
+		item.setDuration(convert2int(getAttr(attr, ATTR_DURATION)));
+		item.setLogoURL(getAttr(attr, ATTR_LOGO));
+		item.setGroupTitle(getAttr(attr, ATTR_GROUP_TITLE));
+		item.setType(getAttr(attr, ATTR_TYPE));
+		item.setDLNAExtras(getAttr(attr, ATTR_DLNA_EXTRAS));
+		item.setPlugin(getAttr(attr, ATTR_PLUGIN));
 		return item;
 	}
 
-	private Map<String, String> parseAttribute(String words) {
+	private Map<String, String> parseAttributes(String words) {
 		Map<String, String> attr = new HashMap<String, String>();
 		if (words == null || words.equals(EMPTY_STRING)) {
 			return attr;
@@ -163,7 +184,7 @@ public class M3UParser {
 					break;
 				}
 			}
-			attr.put(ATTR_DURATION, connector.toString());
+			putAttr(attr, ATTR_DURATION, connector.toString());
 			tmp = shrink(tmp.replaceFirst(connector.toString(), EMPTY_STRING));
 			reset(connector);
 			i = 0;
@@ -177,7 +198,7 @@ public class M3UParser {
 				if (Character.isWhitespace(c)) {
 					// Do nothing
 				} else if (c == ',') {
-					attr.put(ATTR_CHANNEL_NAME, tmp.substring(i));
+					putAttr(attr, ATTR_CHANNEL_NAME, tmp.substring(i));
 					i = tmp.length();
 				} else {
 					connector.append(c);
@@ -210,14 +231,16 @@ public class M3UParser {
 					end = end == -1 ? tmp.length() : end;
 					connector.append(tmp.substring(i, end));
 					startWithQuota = false;
-					attr.put(key, connector.toString());
+					putAttr(attr, key, connector.toString());
 					i = end + 1;
 					reset(connector);
+					key = EMPTY_STRING;
+					status = Status.READY;
 					break;
 				}
 				if (Character.isWhitespace(c)) {
 					if (connector.length() > 0) {
-						attr.put(key, connector.toString());
+						putAttr(attr, key, connector.toString());
 						reset(connector);
 					}
 					key = EMPTY_STRING;
@@ -231,7 +254,7 @@ public class M3UParser {
 			}
 		}
 		if (!key.equals(EMPTY_STRING) && connector.length() > 0) {
-			attr.put(key, connector.toString());
+			putAttr(attr, key, connector.toString());
 			reset(connector);
 		}
 		return attr;
