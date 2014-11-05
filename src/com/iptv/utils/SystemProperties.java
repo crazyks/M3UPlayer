@@ -23,6 +23,6 @@ public class SystemProperties {
 			value = (String) mGetMethod.invoke(mClassType, key);
 		} catch (Exception e) {
 		}
-		return value == null ? defaultValue : value;
+		return (value == null || value.trim().equals("")) ? defaultValue : value;
 	}
 }
